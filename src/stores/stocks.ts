@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { fetchStocks } from '@/utils/api'
+import { fetchStocks } from '@/helpers/api'
 
 export const useStockStore = defineStore('stocks', {
   state: () => ({
