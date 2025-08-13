@@ -1,3 +1,5 @@
+import type { Stock } from "@/types/types"
+
 export async function fetchStocks(next = '') {
   const url = `/stocks?next=${encodeURIComponent(next)}`
   const res = await fetch(url)
