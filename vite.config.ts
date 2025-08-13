@@ -13,13 +13,8 @@ export default defineConfig({
     port: 5173,
     // En dev: toda llamada a /stocks se proxeará al backend
     proxy: {
-      '/stocks': {
-        target: 'http://localhost:8580',
-        changeOrigin: true,
-        secure: false,
-        // No reescribimos ruta: /stocks -> /stocks
-        // rewrite: (path) => path,
-      },
+      '/stocks': { target: 'http://localhost:8580', changeOrigin: true, secure: false, },
+      '/recommendations': { target: 'http://localhost:8580', changeOrigin: true, secure: false },
     },
   },
 })

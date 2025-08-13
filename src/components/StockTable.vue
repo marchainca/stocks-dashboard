@@ -2,10 +2,13 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStockStore } from '@/stores/stocks'
+import { useRecommendationsStore } from '@/stores/recommendations'
 import type { Stock } from '@/types/types'
 
 const store = useStockStore()
 const router = useRouter()
+const recStore = useRecommendationsStore()
+const openReco = ref(false)
 
 // Estado local de UI (sincronizado con la store)
 const search = ref(store.search)
@@ -38,10 +41,18 @@ function fmtMoney(v: number | string | null | undefined) {
   }).format(num)
 }
 
-function fmtDate(iso: string | null | undefined) {
+function fmtDate(iso?: string | null) {
   if (!iso) return '—'
-  try { return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' }).format(new Date(iso)) } catch { return iso }
+  try { return new Intl.DateTimeFormat('es-CO',{ dateStyle:'medium'}).format(new Date(iso)) } catch { return iso }
 }
+
+async function openRecommendations() {
+  openReco.value = true
+  if (!recStore.list.length && !recStore.loading) await recStore.fetch()
+}
+
+function closeRecommendations() { openReco.value = false }
+
 const ratingScore = (r?: string | null) => {
   const map: Record<string, number> = {
     'strong buy': 6, buy: 5, overweight: 4, 'equal weight': 3, neutral: 3,
@@ -75,8 +86,12 @@ const rows = computed<Stock[]>(() => {
   return list
 })
 
-function goDetail(ticker: string) { router.push(`/stock/${ticker}`) }
+function goDetail(ticker: string) { closeRecommendations(); router.push(`/stock/${ticker}`) }
+
 async function nextPage() { await store.fetchNext() }
+
+const scoreWidth = (s: number) => `${Math.max(0, Math.min(100, Math.round(s)))}%`
+
 </script>
 
 <template>
@@ -103,6 +118,19 @@ async function nextPage() { await store.fetchNext() }
           <div class="grow"></div>
           <span v-if="store.error" class="text-sm text-rose-600">Error: {{ store.error }}</span>
         </div>
+
+        <!-- boton de recomendaciones -->
+        <button
+          @click="openRecommendations"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+                bg-emerald-600 text-white hover:bg-emerald-700">
+          <!-- ícono -->
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor">
+            <path d="M12 2l4 7h-8l4-7zm0 7l10 13H2L12 9z"/>
+          </svg>
+          Recomendaciones (30d)
+        </button>
+
 
         <!-- Table -->
         <div class="overflow-x-auto">
@@ -173,4 +201,70 @@ async function nextPage() { await store.fetchNext() }
       </div>
     </section>
   </div>
+
+  <!-- Modal de recomendaciones -->
+  <div v-if="openReco" class="fixed inset-0 z-50">
+    <!-- backdrop -->
+    <div class="absolute inset-0 bg-slate-900/40" @click="closeRecommendations"></div>
+
+    <!-- panel -->
+    <div class="absolute inset-x-0 top-12 mx-auto max-w-3xl px-4">
+      <div class="card overflow-hidden">
+        <header class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-900">Recomendaciones para invertir hoy</h3>
+            <p class="text-xs text-slate-500">
+              Ventana: {{ recStore.windowDays ?? 30 }} días · Universo: {{ recStore.universe ?? '—' }} · Generado: {{ fmtDate(recStore.generatedAt || '') }}
+            </p>
+          </div>
+          <button @click="closeRecommendations"
+            class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-sm">Cerrar</button>
+        </header>
+
+        <section class="p-4">
+          <div v-if="recStore.loading" class="py-10 grid place-items-center">
+            <div class="animate-spin h-6 w-6 rounded-full border-[3px] border-slate-300 border-t-emerald-600"></div>
+          </div>
+
+          <div v-else-if="recStore.error" class="text-rose-600 text-sm px-2 py-3">
+            {{ recStore.error }}
+          </div>
+
+          <ul v-else class="divide-y divide-slate-200">
+            <li v-for="r in recStore.list" :key="r.ticker" class="py-3 px-2 flex items-center gap-4">
+              <!-- score badge + barra -->
+              <div class="w-20 text-center">
+                <div class="text-sm font-semibold text-slate-900">{{ Math.round(r.score) }}</div>
+                <div class="mt-1 h-1.5 bg-slate-100 rounded">
+                  <div class="h-1.5 bg-emerald-500 rounded" :style="{ width: scoreWidth(r.score) }"></div>
+                </div>
+              </div>
+
+              <!-- info principal -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-baseline gap-x-2">
+                  <span class="text-base font-semibold text-slate-900">{{ r.ticker }}</span>
+                  <span class="text-sm text-slate-500 truncate">· {{ r.company }}</span>
+                </div>
+                <div class="mt-1 text-xs text-slate-600 flex flex-wrap gap-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">
+                    {{ r.decision }}
+                  </span>
+                  <span>Broker top: <strong>{{ r.broker_top }}</strong></span>
+                  <span>Recencia: {{ r.reason.recency_days }}d</span>
+                  <span>Consenso 30d: {{ r.reason.consensus30d }}</span>
+                </div>
+              </div>
+
+              <!-- acción -->
+              <div>
+                <button @click="goDetail(r.ticker)" class="text-indigo-600 hover:underline">Ver</button>
+              </div>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
 </template>

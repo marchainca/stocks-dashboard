@@ -1,4 +1,4 @@
-import type { Stock } from '@/types/types'
+import type { Stock, RecommendationResponse  } from '@/types/types'
 
 type ApiResponse = {
   items: Stock[]
@@ -6,6 +6,7 @@ type ApiResponse = {
 }
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').trim()
+const buildPath = (p: string) => (API_BASE ? `${API_BASE}${p}` : p)
 
 /**
  * Construye la URL final:
@@ -55,3 +56,35 @@ export async function fetchStocks(next = ''): Promise<{ items: Stock[]; next_pag
     clearTimeout(timer)
   }
 }
+
+export async function fetchRecommendations(): Promise<RecommendationResponse> {
+  const url = buildPath('/recommendations?days=30&limit=10')
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
+
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Error ${res.status}: ${text || res.statusText}`)
+    }
+    const data = (await res.json()) as RecommendationResponse
+
+    if (!data || !Array.isArray(data.recommendations)) {
+      throw new Error('Respuesta inválida del servidor: falta "recommendations"')
+    }
+
+    // Normaliza score numérico por seguridad
+    data.recommendations = data.recommendations.map(r => ({
+      ...r,
+      score: typeof r.score === 'number' ? r.score : Number(r.score),
+    }))
+
+    return data
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+
