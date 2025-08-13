@@ -19,10 +19,25 @@ onMounted(() => {
 
 /** Helpers */
 function fmtMoney(v: number | string | null | undefined) {
-  const n = typeof v === 'string' ? Number(v) : v
-  if (n === null || n === undefined || Number.isNaN(n)) return '—'
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n)
+  if (v === null || v === undefined || v === '') return '—'
+
+  // Acepta "$8.00", "US$8.00", "1,234.56", etc.
+  const num = typeof v === 'number'
+    ? v
+    : Number(String(v).replace(/\s+/g, '').replace(/[^0-9.-]/g, ''))
+
+  if (Number.isNaN(num)) return String(v) || '—'
+
+  // Muestra solo el símbolo "$" (sin "US$")
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'USD',
+    currencyDisplay: 'narrowSymbol', // <- evita "US$"
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num)
 }
+
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return '—'
   try { return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' }).format(new Date(iso)) } catch { return iso }
@@ -70,7 +85,7 @@ async function nextPage() { await store.fetchNext() }
       <div class="bg-white/90 backdrop-blur-sm shadow-xl rounded-3xl overflow-hidden ring-1 ring-slate-200/70 relative">
         <!-- Header -->
         <header class="px-8 py-6 border-b border-slate-200">
-          <h1 class="text-2xl font-semibold text-slate-800">Data Sample</h1>
+          <h1 class="text-2xl font-semibold text-slate-800">Seguimiento de Acciones: Ratings y Targets</h1>
           <p class="mt-1 text-sm text-slate-500">Explora recomendaciones y cambios de precio objetivo</p>
         </header>
 
