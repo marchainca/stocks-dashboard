@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* opcional */
+@layer base {
+  html, body, #app { height: 100%; }
+  body { @apply bg-gradient-to-r from-slate-100 to-slate-50 text-slate-800 antialiased; }
+}

@@ -1,7 +1,5 @@
 export default {
-  content: ['./index.html', './src/**/*.{vue,ts}'],
-  theme: {
-    extend: {},
-  },
+  content: ['./index.html', './src/**/*.{vue,ts,tsx,js,jsx}',],
+  theme: { extend: {} },
   plugins: [],
 }

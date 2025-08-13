@@ -18,7 +18,7 @@ export const useStockStore = defineStore('stocks', {
       try {
         const { items, next_page } = await fetchStocks(this.nextCursor || '')
         this.items.push(...items)
-        this.nextCursor = next_page ?? null
+        this.nextCursor = next_page
         this.error = null
       } catch (e: any) {
         this.error = e.message ?? String(e)
