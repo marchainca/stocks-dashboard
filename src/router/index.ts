@@ -4,7 +4,7 @@ import StockDetail from '@/pages/StockDetail.vue'
 
 const routes = [
   { path: '/', component: StockTable },
-  { path: '/stock/:ticker', component: StockDetail, props: true },
+  { path: '/stock/:ticker', component: StockDetail },
 ]
 
 export default createRouter({

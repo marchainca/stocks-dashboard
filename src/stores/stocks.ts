@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
-import { fetchStocks } from '../helpers/api'
-import type { Stock, SortKey  } from '../types/types'
+import { fetchStocks } from '@/helpers/api'
+import type { Stock, SortKey  } from '@/types/types'
 
 export const useStockStore = defineStore('stocks', {
   state: () => ({

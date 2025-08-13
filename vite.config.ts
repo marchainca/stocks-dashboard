@@ -8,4 +8,17 @@ export default defineConfig({
    resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  server: {
+    port: 5173,
+    // En dev: toda llamada a /stocks se proxeará al backend
+    proxy: {
+      '/stocks': {
+        target: 'http://localhost:8580',
+        changeOrigin: true,
+        secure: false,
+        // No reescribimos ruta: /stocks -> /stocks
+        // rewrite: (path) => path,
+      },
+    },
+  },
 })
